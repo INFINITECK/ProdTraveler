@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-const kitsFile = "/data/kits.json";
+const kitsFile = "/app/data/kits.json";
 const assembliesFile = "/data/assemblies.json";
 
 function readJson(file, fallback) {
