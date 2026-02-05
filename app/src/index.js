@@ -8,7 +8,7 @@ const POLL_SECONDS = Number(process.env.POLL_SECONDS || "60");
 const ADAPTER = String(process.env.ADAPTER || "mock").toLowerCase();
 const UPDATE_RELEASED = String(process.env.UPDATE_RELEASED || "false").toLowerCase() === "true";
 
-const state = createState("/data/state.sqlite");
+const state = createState();
 
 let adapter;
 if (ADAPTER === "mock") adapter = createMockAdapter();
