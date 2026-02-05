@@ -1,42 +1,46 @@
-import Database from "better-sqlite3";
+import fs from "fs";
+import path from "path";
 
-export function createState(dbPath = "/data/state.sqlite") {
-  const db = new Database(dbPath);
-  db.pragma("journal_mode = WAL");
+const FILE = "/data/state.json";
 
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS kit_state (
-      kit_id TEXT PRIMARY KEY,
-      spec_hash TEXT NOT NULL,
-      assembly_id TEXT,
-      last_sync_utc TEXT,
-      note TEXT
-    );
-    CREATE TABLE IF NOT EXISTS run_state (
-      id INTEGER PRIMARY KEY CHECK (id = 1),
-      last_run_utc TEXT
-    );
-    INSERT OR IGNORE INTO run_state (id, last_run_utc) VALUES (1, NULL);
-  `);
+function readState() {
+  try {
+    return JSON.parse(fs.readFileSync(FILE, "utf8"));
+  } catch {
+    return { lastRunUtc: null, kits: {} };
+  }
+}
 
-  const getKit = db.prepare(`SELECT * FROM kit_state WHERE kit_id = ?`);
-  const upsertKit = db.prepare(`
-    INSERT INTO kit_state (kit_id, spec_hash, assembly_id, last_sync_utc, note)
-    VALUES (@kit_id, @spec_hash, @assembly_id, @last_sync_utc, @note)
-    ON CONFLICT(kit_id) DO UPDATE SET
-      spec_hash=excluded.spec_hash,
-      assembly_id=excluded.assembly_id,
-      last_sync_utc=excluded.last_sync_utc,
-      note=excluded.note
-  `);
+function writeState(state) {
+  fs.mkdirSync(path.dirname(FILE), { recursive: true });
+  fs.writeFileSync(FILE, JSON.stringify(state, null, 2));
+}
 
-  const getLastRun = db.prepare(`SELECT last_run_utc FROM run_state WHERE id = 1`);
-  const setLastRun = db.prepare(`UPDATE run_state SET last_run_utc = ? WHERE id = 1`);
-
+export function createState() {
   return {
-    getKitState: (kitId) => getKit.get(kitId) || null,
-    saveKitState: (row) => upsertKit.run(row),
-    getLastRunUtc: () => getLastRun.get()?.last_run_utc || null,
-    setLastRunUtc: (utc) => setLastRun.run(utc)
+    getKitState: (kitId) => {
+      const s = readState();
+      return s.kits?.[kitId] ?? null;
+    },
+
+    saveKitState: (row) => {
+      const s = readState();
+      s.kits = s.kits || {};
+      s.kits[row.kit_id] = {
+        spec_hash: row.spec_hash,
+        assembly_id: row.assembly_id,
+        last_sync_utc: row.last_sync_utc,
+        note: row.note ?? null
+      };
+      writeState(s);
+    },
+
+    getLastRunUtc: () => readState().lastRunUtc ?? null,
+
+    setLastRunUtc: (utc) => {
+      const s = readState();
+      s.lastRunUtc = utc;
+      writeState(s);
+    }
   };
 }
