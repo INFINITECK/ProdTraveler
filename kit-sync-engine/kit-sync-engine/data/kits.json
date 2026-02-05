@@ -1,0 +1,19 @@
+[
+  {
+    "kitId": "KIT-100",
+    "defaultQty": 1,
+    "site": "MAIN",
+    "components": [
+      {
+        "inventoryId": "COMP-A",
+        "qty": 2,
+        "uom": "EA"
+      },
+      {
+        "inventoryId": "COMP-B",
+        "qty": 1,
+        "uom": "EA"
+      }
+    ]
+  }
+]

@@ -1,0 +1,16 @@
+services:
+  kit-sync-engine:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./app:/app
+      - ./data:/data
+    command: sh -c "npm ci && node src/index.js"
+    environment:
+      PORT: "8080"
+      POLL_SECONDS: "60"
+      ADAPTER: "mock"
+      UPDATE_RELEASED: "false"
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
